@@ -27,6 +27,7 @@ ATOMIC_BIT_INIT(barriers_mutexes)[NR_HISTO];
 barrier_t barriers[NR_HISTO];
 
 // Mutex
+uint8_t __atomic_bit my_mutex_atomic_bits[NR_HISTO];
 mutex_id_t my_mutex[NR_HISTO];
 
 // Histogram in each tasklet
@@ -60,12 +61,15 @@ int main_kernel1() {
 
     if (tasklet_id == 0){ // Initialize once the cycle counter
         mem_reset(); // Reset the heap
-        // Initialize barriers
-        for (unsigned int each_barrier = 0; each_barrier < NR_HISTO; each_barrier++) {
-            barriers[each_barrier].wait_queue = 0xff;
-            barriers[each_barrier].count = nr_l_tasklet;
-            barriers[each_barrier].initial_count = nr_l_tasklet;
-            barriers[each_barrier].lock = (uint8_t) &ATOMIC_BIT_GET(barriers_mutexes)[each_barrier];
+        for (unsigned int each_barrier_and_mutex = 0; each_barrier_and_mutex < NR_HISTO; each_barrier_and_mutex++) {
+            // Initialize barriers
+            barriers[each_barrier_and_mutex].wait_queue = 0xff;
+            barriers[each_barrier_and_mutex].count = nr_l_tasklet;
+            barriers[each_barrier_and_mutex].initial_count = nr_l_tasklet;
+            barriers[each_barrier_and_mutex].lock = (uint8_t) &ATOMIC_BIT_GET(barriers_mutexes)[each_barrier_and_mutex];
+
+            // Initialize mutexes
+            my_mutex[each_barrier_and_mutex] = &my_mutex_atomic_bits[each_barrier_and_mutex];
         }
     }
     // Barrier
